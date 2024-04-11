@@ -1,5 +1,10 @@
 # Predicting Fertility Data Challenge (PreFer)
 
+
+[![UCB PreFer Datahub](https://img.shields.io/badge/UCB%20PreFer-Jupyter-orange?style=for-the-badge&logo=Jupyter)](
+https://datahub.berkeley.edu/hub/user-redirect/git-pull?repo=https%3A%2F%2Fgithub.com%2Fberkeley-demography%2Fprefer-2024&urlpath=lab%2Ftree%2Fprefer-2024%2F&branch=main)
+
+
 This is a template repository to prepare your submission for phase 1 of the Predicting Fertility Data Challenge ([PreFer](https://preferdatachallenge.nl)) through the Next platform. The challenge is to predict whether an individual will have a child within a three year period (2021-2023), based on survey data from previous years (2007-2020). Data come from the [LISS panel](https://www.centerdata.nl/en/liss-panel). For more information, on the data challenge, please visit the [website](https://preferdatachallenge.nl) or read [this paper](https://arxiv.org/abs/2402.00705).
 
 ℹ️ Check out the [Wiki](https://github.com/eyra/fertility-prediction-challenge/wiki/PreFer-Challenge-Wiki) for challenge scope, leaderboards, and frequently asked questions.  

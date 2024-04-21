@@ -14,7 +14,9 @@
 # run.R can be used to test your submission.
 
 # List your packages here. Don't forget to update packages.R!
-library(dplyr) # as an example, not used here
+library(here)
+library(tidyverse)
+library(tidymodels)
 
 clean_df <- function(df, background_df = NULL){
   # Preprocess the input dataframe to feed the model.
@@ -27,18 +29,82 @@ clean_df <- function(df, background_df = NULL){
   # Returns:
   # data frame: The cleaned dataframe with only the necessary columns and processed variables.
 
-  ## This script contains a bare minimum working example
-  # Create new age variable
-  df$age <- 2024 - df$birthyear_bg
-
-  # Selecting variables for modelling
-
-  keepcols = c('nomem_encr', # ID variable required for predictions,
-               'age')        # newly created variable
+  # identifying variables
+  fixed_covars <- c(
+    birthyear_bg = "Birth year of respondent; created and cleaned",
+    gender_bg = "Gender of respondent; created and cleaned",
+    # TODO - leave this out for now, b/c it is missing in some cases
+    #migration_background_bg = "Migration background of the respondent; created and cleaned",
+    age_bg = "The age of the respondent for each wave; created (not fixed, but records similar information as birthyear)"
+  )
   
-  ## Keeping data with variables selected
-  df <- df[ , keepcols ]
+  varying_covars <- c(
+    "partner",
+    "woonvorm",
+    "burgstat",
+    "woning",
+    "sted",
+    "brutohh_f",
+    "nettohh_f",
+    "belbezig",
+    "brutoink",
+    "nettoink",
+    "oplzon",
+    "oplmet",
+    "oplcat",
+    "brutoink_f",
+    "netinc",
+    "nettoink_f"
+  )
+  
+  covars <- c(
+    nomem_encr = "Number of household member encrypted",
+    nohouse_encr = "Number of household encrypted",
+    wave = "Year and month of the field work period",
+    positie = "Position within the household",
+    lftdcat = "Age in CBS (Statistics Netherlands) categories",
+    lftdhhh = "Age of the household head",
+    aantalhh = "Number of household members",
+    aantalki = "Number of living-at-home children in the household, children of the household head or his/her partner",
+    partner = "The household head lives together with a partner (wedded or unwedded)",
+    burgstat = "Civil status",
+    woonvorm = "Domestic situation",
+    woning = "Type of dwelling that the household inhabits",
+    belbezig = "Primary occupation",
+    brutoink = "Personal gross monthly income in Euros",
+    nettoink = "Personal net monthly income in Euros (incl. nettocat)",
+    brutocat = "Personal gross monthly income in categories",
+    nettocat = "Personal net monthly income in categories",
+    oplzon = "Highest level of education irrespective of diploma",
+    oplmet = "Highest level of education with diploma",
+    oplcat = "Level of education in CBS (Statistics Netherlands) categories",
+    doetmee = "Household member participates in the panel",
+    sted = "Urban character of place of residence",
+    simpc = "Does the household have a simPC?",
+    brutoink_f = "Personal gross monthly income in Euros, imputed",
+    netinc = "Personal net monthly income in Euros",
+    nettoink_f = "Personal net monthly income in Euros, imputed",
+    brutohh_f = "Gross household income in Euros",
+    nettohh_f = "Net household income in Euros",
+    werving = "From which recruitment wave the household originates",
+    birthyear_imp = "Year of birth [imputed by PreFer organisers] (based on original gebjaar variable)",
+    gender_imp = "Gender [imputed by PreFer organisers] (based on original geslacht variable)",
+    migration_background_imp = "Origin [imputed by PreFer organisers] (based on original herkomstgroep variable)",
+    age_imp = "Age of the household member [imputed by PreFer organisers] (based on original leeftijd variable)"
+  )
 
+  # Filtering dataframe by selected variables 
+  simple_df <- df %>% 
+    select(contains(names(fixed_covars)), 
+           contains(varying_covars), 
+           nomem_encr) %>%
+    # some of the vars from 2007 were giving us grief, so
+    # we're not including them for now
+    select(-contains('2007')) %>%
+    # filter by whether outcome is available
+    filter(outcome_available == 1)
+
+  
   return(df)
 }
 

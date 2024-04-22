@@ -18,7 +18,7 @@ train_save_model <- function(cleaned_df, outcome_df) {
   # set seed
   set.seed(101319)
   
-  simple_df_split <- initial_split(combined_df, prop=0.8, strata=new_child)
+  simple_df_split <- initial_split(simple_df, prop=0.8, strata=new_child)
   simple_df_train <- training(simple_df_split)
   simple_df_test <- testing(simple_df_split)
   

@@ -21,7 +21,9 @@ library(tidymodels)
 clean_df <- function(df, background_df = NULL){
   # Preprocess the input dataframe to feed the model.
   ### If no cleaning is done (e.g. if all the cleaning is done in a pipeline) leave only the "return df" command
-
+  df <- df %>%
+    # filter by whether outcome is available
+    filter(outcome_available == 1)
   # Parameters:
   # df (dataframe): The input dataframe containing the raw data (e.g., from PreFer_train_data.csv or PreFer_fake_data.csv).
   # background (dataframe): Optional input dataframe containing background data (e.g., from PreFer_train_background_data.csv or PreFer_fake_background_data.csv).
@@ -97,12 +99,11 @@ clean_df <- function(df, background_df = NULL){
   simple_df <- df %>% 
     select(contains(names(fixed_covars)), 
            contains(varying_covars), 
+           contains(covars),
            nomem_encr) %>%
     # some of the vars from 2007 were giving us grief, so
     # we're not including them for now
-    select(-contains('2007')) %>%
-    # filter by whether outcome is available
-    filter(outcome_available == 1)
+    select(-contains('2007'))
 
   
   return(df)
@@ -145,10 +146,10 @@ predict_outcomes <- function(df, background_df = NULL, model_path = "./model.rds
   # Generate predictions from model
   predictions <- predict(model, 
                          subset(df, select = vars_without_id), 
-                         type = "response") 
+                         type = "class") 
   
   # Create predictions that should be 0s and 1s rather than, e.g., probabilities
-  predictions <- ifelse(predictions > 0.5, 1, 0)  
+  #predictions <- ifelse(predictions > 0.5, 1, 0)  
   
   # Output file should be data.frame with two columns, nomem_encr and predictions
   df_predict <- data.frame("nomem_encr" = df[ , "nomem_encr" ], "prediction" = predictions)

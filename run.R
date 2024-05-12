@@ -61,7 +61,11 @@ run_predict <- function(data_path, background_data_path, output=NULL) {
   df <- read.csv(data_path, encoding="latin1")
   background_df <- read.csv(background_data_path, encoding="latin1")
   
+  cat("GOING TO RUN predict_outcomes")
+
   predictions <- predict_outcomes(df, background_df)
+
+  cat("predict_outcomes finished...")
   
   # Check if predictions have the required format
   stopifnot(ncol(predictions) == 2,

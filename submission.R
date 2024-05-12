@@ -59,10 +59,14 @@ predict_outcomes <- function(df, background_df = NULL, model_path = "./model.rds
   
   # Load the model
   model <- readRDS(model_path)
+
+  print("Model loaded...")
   
   df_predict <- predict(model, df) %>%
     bind_cols(df %>% select(nomem_encr)) %>%
     select(nomem_encr, prediction = .pred_class)
+
+
   
   print("Saved predictions")
   ## Exclude the variable nomem_encr if this variable is NOT in your model

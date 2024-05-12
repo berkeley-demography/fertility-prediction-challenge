@@ -63,6 +63,16 @@ predict_outcomes <- function(df, background_df = NULL, model_path = "./best_fina
   print("Model loaded...")
 
   print(summary(model))
+
+  print("Reading fake data (for debugging)...")
+  test_data <- read_csv("Prefer_fake_data.csv")
+  print("... fake data read.")
+
+  print("predicting on fake data (for debugging)...")
+  fake_pred <- predict(model, test_data)
+  print("... predicted on fake data")
+
+  print("predicting for real...")
   
   df_predict <- predict(model, df) %>%
     #bind_cols(df %>% select(nomem_encr)) %>%

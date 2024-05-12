@@ -17,3 +17,4 @@ train_save_model <- function(cleaned_df, outcome_df) {
   # Save the model
   saveRDS(model, "model.rds")
 }
+

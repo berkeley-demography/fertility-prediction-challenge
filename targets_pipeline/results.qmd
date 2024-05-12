@@ -1,0 +1,45 @@
+---
+title: "Summarize pipeline results"
+format: 
+  html:
+    embed-resources: true
+editor: source
+---
+
+
+```{r}
+library(targets)
+library(tidyverse)
+library(tidymodels)
+```
+
+
+Plot with results for each model
+
+```{r}
+tar_load(tune_results)
+autoplot(tune_results)
+```
+
+
+Only the best results from each type of model
+
+```{r}
+autoplot(tune_results, select_best=TRUE)
+```
+
+Model ranking
+
+```{r}
+tar_load(ranked_results)
+rmarkdown::paged_table(ranked_results)
+```
+
+Best model test-set performance
+
+```{r}
+tar_load(best_final_fit)
+best_final_fit %>%
+  collect_metrics()
+```
+

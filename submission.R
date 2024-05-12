@@ -61,10 +61,13 @@ predict_outcomes <- function(df, background_df = NULL, model_path = "./best_fina
   model <- readRDS(model_path) %>% unbundle()
 
   print("Model loaded...")
+
+  print(summary(model))
   
   df_predict <- predict(model, df) %>%
     bind_cols(df %>% select(nomem_encr)) %>%
-    select(nomem_encr, prediction = .pred_class)
+    mutate(prediction = as.numeric(paste(.pred_class))) %>%
+    select(nomem_encr, prediction)
 
 
   

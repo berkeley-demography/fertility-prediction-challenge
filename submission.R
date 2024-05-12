@@ -55,7 +55,7 @@ predict_outcomes <- function(df, background_df = NULL, model_path = "./best_fina
   }
   
   # Preprocess the fake / holdout data
-  #df <- clean_df(df, background_df)
+  df <- clean_df(df, background_df)
   
   # Load the model
   model <- readRDS(model_path) %>% unbundle()

@@ -4,7 +4,7 @@
 # It is important to document your training steps here, including seed, 
 # number of folds, model, et cetera
 
-train_save_model <- function(model_path = "best_final_fit.rds") {
+train_save_model <- function(cleaned_df, outcome_df) {
   # Trains a model using the cleaned dataframe and saves the model to a file.
 
   # Parameters:
@@ -12,7 +12,7 @@ train_save_model <- function(model_path = "best_final_fit.rds") {
   # outcome_df (dataframe): The data with the outcome variable (e.g., from PreFer_train_outcome.csv or PreFer_fake_outcome.csv).
   
   # prepping our final fit model to be replace model.rds
-  model <- readRDS(model_path) %>% unbundle()
+  model <- readRDS("./best_final_fit.rds") %>% unbundle()
   
   # Save the model
   saveRDS(model, "model.rds")

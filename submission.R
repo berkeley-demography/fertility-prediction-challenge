@@ -19,6 +19,8 @@ library(tidyverse)
 library(tidymodels)
 library(bundle)
 
+print("Starting script...")
+
 clean_df <- function(df, background_df = NULL){
   # Preprocess the input dataframe to feed the model.
   
@@ -62,7 +64,7 @@ predict_outcomes <- function(df, background_df = NULL, model_path = "./model.rds
     bind_cols(df %>% select(nomem_encr)) %>%
     select(nomem_encr, prediction = .pred_class)
   
-
+  print("Saved predictions")
   ## Exclude the variable nomem_encr if this variable is NOT in your model
   #vars_without_id <- colnames(df)[colnames(df) != "nomem_encr"]
   #
@@ -83,4 +85,5 @@ predict_outcomes <- function(df, background_df = NULL, model_path = "./model.rds
   return( df_predict )
 }
 
+print("Script complete")
 

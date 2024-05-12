@@ -58,7 +58,7 @@ predict_outcomes <- function(df, background_df = NULL, model_path = "./model.rds
   #df <- clean_df(df, background_df)
   
   # Load the model
-  model <- readRDS(model_path)
+  model <- readRDS(model_path) %>% unbundle()
 
   print("Model loaded...")
   

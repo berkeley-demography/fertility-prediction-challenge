@@ -65,7 +65,8 @@ predict_outcomes <- function(df, background_df = NULL, model_path = "./best_fina
   print(summary(model))
 
   print("Reading fake data (for debugging)...")
-  test_data <- read_csv("Prefer_fake_data.csv")
+  #test_data <- read_csv("Prefer_fake_data.csv")
+  test_data <- read_csv("/data/PreFer_fake_data.csv")
   print("... fake data read.")
 
   print("predicting on fake data (for debugging)...")

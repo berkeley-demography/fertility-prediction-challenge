@@ -65,12 +65,17 @@ predict_outcomes <- function(df, background_df = NULL, model_path = "./best_fina
   print(summary(model))
   
   df_predict <- predict(model, df) %>%
-    bind_cols(df %>% select(nomem_encr)) %>%
+    #bind_cols(df %>% select(nomem_encr)) %>%
     mutate(prediction = as.numeric(paste(.pred_class))) %>%
-    select(nomem_encr, prediction)
+    select(prediction)
+    #select(nomem_encr, prediction)
 
+  print("Model predictions run...")
 
-  
+  ids <- df %>% select(nomem_encr)
+
+  df_predict <- bind_cols(df_predict, ids)
+
   print("Saved predictions")
   ## Exclude the variable nomem_encr if this variable is NOT in your model
   #vars_without_id <- colnames(df)[colnames(df) != "nomem_encr"]

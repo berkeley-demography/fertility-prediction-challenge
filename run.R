@@ -10,7 +10,8 @@
 
 library(dplyr)
 library(tidyr)
-
+library(tidymodels)
+tidymodels_prefer()
 
 source("submission.R")
 

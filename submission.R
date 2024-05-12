@@ -52,8 +52,6 @@ predict_outcomes <- function(df, background_df = NULL, model_path = "./model.rds
     warning("The identifier variable 'nomem_encr' should be in the dataset")
   }
   
-  set.seed(105)
-  
   # Preprocess the fake / holdout data
   #df <- clean_df(df, background_df)
   

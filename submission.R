@@ -22,8 +22,7 @@ library(bundle)
 clean_df <- function(df, background_df = NULL){
   # Preprocess the input dataframe to feed the model.
   
-  # data are cleaned in the pipeline, not here
-
+  # data are cleaned in the model pipeline, not here
   return(df)
 }
 

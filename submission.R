@@ -69,8 +69,16 @@ predict_outcomes <- function(df, background_df = NULL, model_path = "./best_fina
   test_data <- read_csv("/data/PreFer_fake_data.csv")
   print("... fake data read.")
 
-  print("fake data, first row: ")
-  print(test_data[1,])
+  # this seems to be the same fake data that doesn't cause
+  # errors locally
+  #print("fake data, first row: ")
+  #print(test_data[1,])
+
+  print("pulling preprocessor from workflow")
+  prepped_rec <- pull_workflow_preprocessor(model)
+
+  print("running recipe from workflow")
+  print(prepped_rec)
 
   print("predicting on fake data (for debugging)...")
   fake_pred <- predict(model, test_data)

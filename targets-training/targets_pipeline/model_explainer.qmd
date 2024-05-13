@@ -1,0 +1,69 @@
+---
+title: "Summarize pipeline results"
+format: 
+  html:
+    embed-resources: true
+editor: source
+---
+
+
+```{r}
+library(targets)
+library(tidyverse)
+library(tidymodels)
+library(DALEXtra)
+library(vip)
+
+## This looks promising, but is super slow for me
+#library(modelStudio)
+```
+
+
+Plot with results for each model
+
+```{r}
+tar_load(best_final_fit)
+tar_load(df_train)
+```
+
+
+Explain best model
+
+See 
+
+- <https://www.tmwr.org/explain> 
+- <https://stackoverflow.com/questions/73999736/how-do-i-extract-a-model-fit-from-a-tidymodels-workflowset>
+- <https://juliasilge.com/blog/mario-kart/#:~:text=To%20use%20DALEX%20with%20tidymodels>
+
+for some help here
+
+```{r}
+best_wkflow <- extract_workflow(best_final_fit)
+```
+
+```{r}
+best_wkflow %>% 
+  pull_workflow_fit() %>%
+  vip(geom="point", num_features=100)
+```
+
+
+## More detailed explanations (maybe) via DALEK
+
+```{r}
+explainer_bart <-
+  explain_tidymodels(
+    best_wkflow,
+    data = df_train %>% dplyr::select(-new_child),
+    y = as.integer(df_train$new_child)
+  )
+
+```
+
+```{r}
+set.seed(12345)
+vip_bart <- model_parts(explainer = explainer_bart, 
+                        loss_function = loss_root_mean_square)
+```
+
+

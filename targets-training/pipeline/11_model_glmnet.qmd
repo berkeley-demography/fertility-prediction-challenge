@@ -1,0 +1,80 @@
+---
+title: "glmnet model"
+format: html
+editor: source
+---
+
+```{r}
+library(here)
+library(tidyverse)
+library(tidymodels)
+library(bundle)
+```
+
+```{r}
+raw_data_dir <- here("data")
+prepped_data_dir <- here("data-prepped")
+```
+
+## Open up the data
+
+```{r}
+rec <- unbundle(readRDS(file=here(prepped_data_dir, 'recipe.rds')))
+                
+train_data <- readRDS(file=here(prepped_data_dir, 'train_split.rds'))
+
+df_train <- train_data$df_train
+folds <- train_data$folds
+```
+
+
+## Lasso
+
+Let's try to tune the penalty parameter using cross-validation,
+selecting the best-performing model according to f1 score (f_meas).
+Then re-fit the best model to the whole dataset and use it as our
+predictor
+
+Quite helpful: <https://stackoverflow.com/questions/66639452/tuning-a-lasso-model-and-predicting-using-tidymodels>
+
+```{r}
+glmnet_model <- 
+  #logistic_reg(penalty=double(1), mixture=double(1)) %>%
+  logistic_reg(penalty=tune(), 
+               mixture=1) %>%
+  set_engine('glmnet') %>%
+  set_mode('classification')
+
+glmnet_workflow <-
+  workflow() %>%
+  add_model(glmnet_model) %>%
+  add_recipe(rec)
+
+glmnet_tune_grid <- tibble(penalty = 10^seq(-2, -1, length.out = 10))
+
+glmnet_tune_res <- glmnet_workflow %>% 
+    tune_grid(resamples = folds,
+              grid = glmnet_tune_grid,
+              control = control_grid(verbose = FALSE, save_pred = TRUE),
+              metrics = metric_set(recall, precision, f_meas))
+
+glmnet_best_mod <- glmnet_tune_res %>% 
+  select_best(metric = "f_meas")
+
+glmnet_fit <-
+  finalize_workflow(glmnet_workflow, glmnet_best_mod) %>%
+  fit(data = df_train)
+```
+
+Plot to show results of tuning
+
+```{r}
+autoplot(glmnet_tune_res, metric='f_meas') + theme_minimal()
+```
+
+
+```{r}
+saveRDS(bundle(glmnet_fit),
+        file=here(prepped_data_dir, 'fit_glmnet.rds'))
+```
+

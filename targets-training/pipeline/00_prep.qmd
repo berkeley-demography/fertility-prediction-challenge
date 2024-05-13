@@ -1,0 +1,502 @@
+---
+title: "Open raw data + make train/test"
+format: html
+editor: source
+---
+
+```{r}
+library(here)
+library(tidyverse)
+library(tidymodels)
+```
+
+```{r}
+raw_data_dir <- here("data")
+prepped_data_dir <- here("data-prepped")
+```
+
+## Open up the data
+
+```{r}
+train_df <- data.table::fread(here(raw_data_dir, 
+                                   'training_data',
+                                   'PreFer_train_data.csv'),
+                              keepLeadingZeros = TRUE, # if FALSE adds zeroes to some dates
+                              data.table = FALSE) # returns a data.frame object rather than data.table
+
+background_df <- data.table::fread(here(raw_data_dir, 
+                                        'other_data', 
+                                        'PreFer_train_background_data.csv'),
+                                   keepLeadingZeros = TRUE,
+                                   data.table = FALSE)
+
+outcome_df <- data.table::fread(here(raw_data_dir, 
+                                     'training_data', 
+                                     'PreFer_train_outcome.csv'),
+                                 keepLeadingZeros = TRUE,
+                                 data.table = FALSE)
+
+# for now, not using supplementary data (which includes people who are
+# not in the right age range)
+```
+
+## Open up the codebook
+
+```{r}
+codebook <- read_csv(here(raw_data_dir, 
+                          'codebooks', 
+                          'PreFer_codebook.csv'))
+
+codebook_summary <- read_csv(here(raw_data_dir, 
+                                  'codebooks', 
+                                  'PreFer_codebook_summary.csv'))
+
+```
+## Pick out the variables we'll use
+
+```{r}
+fixed_covars <- c(
+  birthyear_bg = "Birth year of respondent; created and cleaned",
+  gender_bg = "Gender of respondent; created and cleaned",
+  # TODO - leave this out for now, b/c it is missing in some cases
+  #migration_background_bg = "Migration background of the respondent; created and cleaned",
+  age_bg = "The age of the respondent for each wave; created (not fixed, but records similar information as birthyear)"
+)
+
+varying_covars <- c(
+  "partner",
+  "woonvorm",
+  "burgstat",
+  "woning",
+  "sted",
+  "brutohh_f",
+  "nettohh_f",
+  "belbezig",
+  "brutoink",
+  "nettoink",
+  "oplzon",
+  "oplmet",
+  "oplcat",
+  "brutoink_f",
+  "netinc",
+  "nettoink_f"
+)
+
+covars <- c(
+  nomem_encr = "Number of household member encrypted",
+  nohouse_encr = "Number of household encrypted",
+  wave = "Year and month of the field work period",
+  positie = "Position within the household",
+  lftdcat = "Age in CBS (Statistics Netherlands) categories",
+  lftdhhh = "Age of the household head",
+  aantalhh = "Number of household members",
+  aantalki = "Number of living-at-home children in the household, children of the household head or his/her partner",
+  partner = "The household head lives together with a partner (wedded or unwedded)",
+  burgstat = "Civil status",
+  woonvorm = "Domestic situation",
+  woning = "Type of dwelling that the household inhabits",
+  belbezig = "Primary occupation",
+  brutoink = "Personal gross monthly income in Euros",
+  nettoink = "Personal net monthly income in Euros (incl. nettocat)",
+  brutocat = "Personal gross monthly income in categories",
+  nettocat = "Personal net monthly income in categories",
+  oplzon = "Highest level of education irrespective of diploma",
+  oplmet = "Highest level of education with diploma",
+  oplcat = "Level of education in CBS (Statistics Netherlands) categories",
+  doetmee = "Household member participates in the panel",
+  sted = "Urban character of place of residence",
+  simpc = "Does the household have a simPC?",
+  brutoink_f = "Personal gross monthly income in Euros, imputed",
+  netinc = "Personal net monthly income in Euros",
+  nettoink_f = "Personal net monthly income in Euros, imputed",
+  brutohh_f = "Gross household income in Euros",
+  nettohh_f = "Net household income in Euros",
+  werving = "From which recruitment wave the household originates",
+  birthyear_imp = "Year of birth [imputed by PreFer organisers] (based on original gebjaar variable)",
+  gender_imp = "Gender [imputed by PreFer organisers] (based on original geslacht variable)",
+  migration_background_imp = "Origin [imputed by PreFer organisers] (based on original herkomstgroep variable)",
+  age_imp = "Age of the household member [imputed by PreFer organisers] (based on original leeftijd variable)"
+)
+```
+
+
+# Create a train/test split
+
+Notes:
+
+- this should be done at the **household** level (though it may not make a huge difference)
+- if we're using the 'extra' data from Nick, that should all be in the training set and not the test set
+  (though that makes the training set unbalanced?)
+
+```{r}
+background_to_use <- background_df %>%
+  # for each respondent
+  group_by(nomem_encr) %>% 
+  # pick the most recent wave
+  filter(wave == max(wave)) %>%
+  ungroup() %>%
+  # most recent hh id 
+  mutate(most_recent_hh = nohouse_encr) %>%
+  select(nomem_encr, nohouse_encr)
+```
+
+
+```{r}
+simple_df <- train_df %>% 
+  # only use data for which outcome is observed
+  filter(outcome_available == 1) %>%
+  left_join(outcome_df, by=c('nomem_encr')) %>%
+  #mutate(new_child = as.factor(new_child)) %>%
+  left_join(background_to_use,
+            by=c('nomem_encr')) 
+
+any_new_child_in_hh <- simple_df %>%
+  group_by(nohouse_encr) %>%
+  summarize(any_new_child_in_hh = max(new_child))
+
+df_for_split <- simple_df %>%
+  left_join(any_new_child_in_hh, 
+            by=c('nohouse_encr')) %>%
+  #mutate(any_new_child_in_hh = factor(any_new_child_in_hh)) %>%
+  ## HERE, select any vars we want to use
+  select(contains(names(fixed_covars)), 
+         contains(varying_covars), 
+         contains(covars), 
+         # these are needed for stratified train/test split 
+         nohouse_encr, 
+         any_new_child_in_hh, 
+         # these are pretty much required
+         # outcome
+         new_child, 
+         # id
+         nomem_encr) %>%
+  mutate(new_child = factor(new_child))
+
+set.seed(101319)
+
+#simple_df_split <- initial_split(simple_df,
+df_split <- group_initial_split(df_for_split, 
+                                group=nohouse_encr,
+                                prop=0.8, 
+                                pool = 0,
+                                #strata=new_child)
+                                strata=any_new_child_in_hh)
+df_test <- testing(df_split)
+
+df_train <- training(df_split)
+
+folds <- vfold_cv(df_train, v=10)
+```
+
+```{r}
+saveRDS(lst(df_test, df_train, folds),
+        file=here(prepped_data_dir, 'train_test_split.rds'))
+```
+
+
+## Create recipe object
+
+See <https://recipes.tidymodels.org/articles/recipes.html>
+
+```{r}
+rec <- recipe(new_child ~ ., data=df_train) %>%
+  # the ID variables are not a predictor
+  update_role(nomem_encr, nohouse_encr, new_role = "ID") %>%
+  # this is also NOT a predictor
+  update_role(any_new_child_in_hh, new_role = "splitting indicator") %>%
+  # use k nearest neighbors to impute missing predictors
+  step_impute_knn(all_predictors()) %>%
+  # convert new_child to factor
+  #step_num2factor(new_child,
+  #                levels=paste(0:1)) %>%
+  # convert gender to a factor
+  step_num2factor(gender_bg,
+                  levels=c("m", "f")) %>%
+  #step_num2factor(contains('woonvorm'),
+  #                levels=paste(1:5)) %>%
+  #step_num2factor(contains('partner'),
+  #                levels=paste(0:1)) %>%
+  # turn all categorical predictors into dummies
+  step_dummy(all_nominal_predictors()) %>%
+  # center + scale most numeric predictors
+  # EXCEPT
+  step_center(all_numeric_predictors(), -contains('birthyear_bg')) %>%
+  step_scale(all_numeric_predictors(), -contains('birthyear_bg')) %>%
+  # center + scale all numeric predictors
+  #step_center(all_numeric_predictors()) %>%
+  #step_scale(all_numeric_predictors())
+  # remove zero variance predictors
+  step_zv(all_predictors())
+ 
+rec
+```
+
+```{r}
+#trained_rec <- prep(rec_obj, 
+#                    training = df_train)
+#trained_rec
+```
+
+
+```{r}
+#train_data <- bake(trained_recipe, 
+#                   new_data = df_train)
+#test_data <- bake(trained_recipe, 
+#                  new_data = df_test)
+```
+
+
+
+
+
+## Logistic regression 
+
+
+```{r}
+logistic_model <- 
+   logistic_reg() %>% 
+     set_engine('glm') %>% 
+     set_mode('classification')
+
+logistic_workflow <- 
+  workflow() %>%
+  add_model(logistic_model) %>%
+  add_recipe(rec) 
+
+logistic_fit <-
+  logistic_workflow %>%
+  fit(data = df_train)
+  #fit_resamples(folds)
+```
+
+## Lasso
+
+Let's try to tune the penalty parameter using cross-validation,
+selecting the best-performing model according to f1 score (f_meas).
+Then re-fit the best model to the whole dataset and use it as our
+predictor
+
+Quite helpful: <https://stackoverflow.com/questions/66639452/tuning-a-lasso-model-and-predicting-using-tidymodels>
+
+```{r}
+glmnet_model <- 
+  #logistic_reg(penalty=double(1), mixture=double(1)) %>%
+  logistic_reg(penalty=tune(), 
+               mixture=1) %>%
+  set_engine('glmnet') %>%
+  set_mode('classification')
+
+glmnet_workflow <-
+  workflow() %>%
+  add_model(glmnet_model) %>%
+  add_recipe(rec)
+
+glmnet_tune_grid <- tibble(penalty = 10^seq(-2, -1, length.out = 10))
+
+glmnet_tune_res <- glmnet_workflow %>% 
+    tune_grid(resamples = folds,
+              grid = glmnet_tune_grid,
+              control = control_grid(verbose = FALSE, save_pred = TRUE),
+              metrics = metric_set(recall, precision, f_meas))
+
+glmnet_best_mod <- glmnet_tune_res %>% 
+  select_best(metric = "f_meas")
+
+glmnet_fit <-
+  finalize_workflow(glmnet_workflow, glmnet_best_mod) %>%
+  fit(data = df_train)
+```
+
+Plot to show results of tuning
+
+```{r}
+autoplot(glmnet_tune_res, metric='f_meas') + theme_minimal()
+```
+
+
+BART 
+
+Tune the number of trees
+
+```{r}
+bart_model <- 
+  bart(trees = tune()) %>%
+  set_engine('dbarts') %>%
+  set_mode('classification')
+
+bart_workflow <-
+  workflow() %>%
+  add_model(bart_model) %>%
+  add_recipe(rec)
+
+bart_tune_grid <- tibble(trees = c(50, 100, 150, 200, 250, 300))
+
+
+bart_tune_res <- bart_workflow %>% 
+  tune_grid(resamples = folds,
+            grid = bart_tune_grid,
+            control = control_grid(verbose = FALSE, save_pred = TRUE),
+            metrics = metric_set(recall, precision, f_meas))
+
+bart_best_mod <- bart_tune_res %>%
+  select_best(metric = "f_meas")
+  
+
+bart_fit <-
+  bart_workflow %>%
+  finalize_workflow(bart_best_mod) %>%
+  fit(data = df_train)
+```
+
+Plot to show results of tuning
+
+```{r}
+autoplot(bart_tune_res, metric='f_meas') + theme_minimal()
+```
+
+DECISION TREE
+
+```{r}
+dt_model <-
+  decision_tree() %>%
+  set_engine('rpart') %>%
+  set_mode('classification')
+
+dt_workflow <-
+  workflow() %>%
+  add_model(dt_model) %>%
+  add_recipe(rec)
+
+dt_fit <-
+  dt_workflow %>%
+  fit(data=df_train)
+```
+
+BOOSTED TREES (ENSEMBLE OF DECISION TREES)
+
+TODO - tune the number of trees, other params
+
+```{r, eval=FALSE}
+use_xgboost(new_child ~ ., data=df_train)
+```
+```{r}
+
+```
+
+
+```{r}
+boosted_trees_model <-
+  boost_tree(trees = tune(), min_n = tune(), tree_depth = tune(), learn_rate = tune(), 
+      loss_reduction = tune(), sample_size = tune()) %>% 
+    set_mode("classification") %>% 
+    set_engine("xgboost")   
+#  boost_tree(trees=20) %>%
+#  set_engine('xgboost') %>%
+#  set_mode('classification')
+
+boosted_trees_workflow <-
+  workflow() %>%
+  add_model(boosted_trees_model) %>%
+  add_recipe(rec)
+
+set.seed(52097)
+boosted_trees_tuned <-
+  tune_grid(xgboost_workflow, 
+            resamples = folds, 
+            grid = stop("add number of candidate points"))
+
+boosted_trees_fit <-
+  boosted_trees_workflow %>%
+  fit(data = df_train)
+```
+
+
+
+```{r}
+# only need to run once - loads the `score` fn
+source("https://preferdatachallenge.nl/data/score.R")
+```
+
+See <https://parsnip.tidymodels.org/reference/glmnet-details.html>
+
+Helper function that checks fit on the training and train-test samples
+
+```{r}
+check_fit <- function(model_fit,
+                      df_train, 
+                      df_test,
+                      model_label) {
+  
+  predictions_train_df <- 
+    predict(model_fit, 
+            new_data=df_train) %>%
+    bind_cols(df_train %>% select(nomem_encr)) %>%
+    mutate(prediction = as.numeric(paste(.pred_class))) %>%
+    select(nomem_encr, prediction)
+  
+  predictions_test_df <- 
+    predict(model_fit, 
+            new_data=df_test) %>%
+    bind_cols(df_test %>% select(nomem_encr)) %>%
+    mutate(prediction = as.numeric(paste(.pred_class))) %>%
+    select(nomem_encr, prediction)
+  
+  score_train <- score(predictions_train_df,
+                       df_train %>% 
+                         select(nomem_encr, new_child) %>% 
+                         mutate(new_child = as.numeric(paste(new_child))))
+  
+  score_test <- score(predictions_test_df,
+                      df_test %>% 
+                        select(nomem_encr, new_child) %>% 
+                        mutate(new_child = as.numeric(paste(new_child))))
+  
+  return(bind_rows(score_train %>% mutate(model=model_label, type='train'),
+                   score_test %>% mutate(model=model_label, type='test')))
+  
+  
+}
+```
+
+
+calculate prediction scores 
+
+```{r}
+res <- bind_rows(
+  check_fit(dt_fit, 
+            df_train=df_train, 
+            df_test=df_test, 
+            'dt decision tree'),
+  check_fit(boosted_trees_fit, 
+            df_train=df_train, 
+            df_test=df_test, 
+            'xgboost boosted decision tree'),
+  check_fit(logistic_fit, 
+            df_train=df_train, df_test=df_test, 
+            'glm logistic'),
+  check_fit(glmnet_fit, 
+            df_train=df_train, 
+            df_test=df_test, 
+            'glmnet'),
+  check_fit(bart_fit, 
+            df_train=df_train, 
+            df_test=df_test, 
+            'bart')
+)
+
+res
+```
+
+Only on the test data
+
+NB: now, with some tuning, BART is the best-performing one... 
+
+```{r}
+res %>%
+  filter(type == 'test') %>%
+  arrange(desc(f1_score))
+```
+
+
+
+

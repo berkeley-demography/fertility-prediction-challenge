@@ -75,7 +75,7 @@ predict_outcomes <- function(df, background_df = NULL, model_path = "./best_fina
   #print(test_data[1,])
 
   print("pulling preprocessor from workflow")
-  prepped_rec <- pull_workflow_preprocessor(model)
+  prepped_rec <- pull_workflow_prepped_recipe(model)
 
   print("showing recipe from workflow")
   print(prepped_rec)

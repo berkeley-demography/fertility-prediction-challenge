@@ -77,8 +77,11 @@ predict_outcomes <- function(df, background_df = NULL, model_path = "./best_fina
   print("pulling preprocessor from workflow")
   prepped_rec <- pull_workflow_preprocessor(model)
 
-  print("running recipe from workflow")
+  print("showing recipe from workflow")
   print(prepped_rec)
+
+  print("running recipe from workflow")
+  prepped_df <- bake(prepped_rec, df)
 
   print("predicting on fake data (for debugging)...")
   fake_pred <- predict(model, test_data)

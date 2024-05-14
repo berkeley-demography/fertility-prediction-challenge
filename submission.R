@@ -55,7 +55,7 @@ predict_outcomes <- function(df, background_df = NULL, model_path = "./best_fina
   }
   
   # Preprocess the fake / holdout data
-  df <- clean_df(df, background_df)
+  #df <- clean_df(df, background_df)
   
   # Load the model
   model <- readRDS(model_path) %>% unbundle()
@@ -64,30 +64,31 @@ predict_outcomes <- function(df, background_df = NULL, model_path = "./best_fina
 
   print(summary(model))
 
-  print("Reading fake data (for debugging)...")
-  #test_data <- read_csv("Prefer_fake_data.csv")
-  test_data <- read_csv("/data/PreFer_fake_data.csv")
-  print("... fake data read.")
+  #print("Reading fake data (for debugging)...")
+  ##test_data <- read_csv("Prefer_fake_data.csv")
+  #test_data <- read_csv("/data/PreFer_fake_data.csv")
+  #print("... fake data read.")
 
   # this seems to be the same fake data that doesn't cause
   # errors locally
   #print("fake data, first row: ")
   #print(test_data[1,])
 
-  print("pulling preprocessor from workflow")
-  prepped_rec <- pull_workflow_prepped_recipe(model)
+  #NB: get warning 'should use extrac_recipe() instead'
+  #print("pulling preprocessor from workflow")
+  #prepped_rec <- pull_workflow_prepped_recipe(model)
 
-  print("showing recipe from workflow")
-  print(prepped_rec)
+  #print("showing recipe from workflow")
+  #print(prepped_rec)
 
-  print("running recipe from workflow")
-  prepped_df <- bake(prepped_rec, test_data)
+  #print("running recipe from workflow")
+  #prepped_df <- bake(prepped_rec, test_data)
 
-  print("predicting on fake data (for debugging)...")
-  fake_pred <- predict(model, test_data)
-  print("... predicted on fake data")
+  #print("predicting on fake data (for debugging)...")
+  #fake_pred <- predict(model, test_data)
+  #print("... predicted on fake data")
 
-  print("predicting for real...")
+  #print("predicting for real...")
   
   df_predict <- predict(model, df) %>%
     #bind_cols(df %>% select(nomem_encr)) %>%

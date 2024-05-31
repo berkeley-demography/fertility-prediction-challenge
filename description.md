@@ -1,8 +1,6 @@
 # Description of submission
 
-## Methods
-
-### Overall Approach
+### Summary
 
 Our team used the tidymodels package in R to automate much of our model selection procedure. We tested several different model types (random forest, BART, XGBoost, and logistic regression) and several different combinations of features. To tune model hyperparameters, we used 10 fold cross-validation (repeated 5 times). We then fit our best performing model (highest F1 score) on our held out test set.  
 
@@ -20,7 +18,7 @@ Variable preparation using tidymodels involves the creation of variable "recipes
 
 We fit and tuned many models using grid search cross validation to first, select the best hyperparameters for each model and second, to select our top performing models. Model performance was evaluated using all metrics, though we ultimately used the F1 score to select our final model. The winning model was a random forest using the indiscriminate variables. However, though this model performed best on our cross validation folds and test set, we found that it didn't generalize nearly as well to the competition holdout set (F1 score of ~0.93 on our test set vs. F1 score of ~0.61 on the holdout set). We thought using a model with our hand-crafted variables might generalize better so decided to submit our second best performing model instead, a BART model using the hand-selected features, for the final Phase 1 submission. 
 
-## Next Steps 
+# Next Steps 
 
 Our pipeline-based approach and comprehensive model-testing are ideally suited for scaling to larger datasets. Feature preprocessing using recipes, 10-fold cross-validation and grid search for hyperparameter tuning, and automated model performance evaluation will translate effortlessly to the larger register data. This efficiency will enable us to quickly implement and test models with the new data without extensive debugging and alterations, allowing more time for thoughtfully refining our approach and making substantial improvements to our model.
 
@@ -28,7 +26,7 @@ We also employ powerful models capable of handling increased data volumes (e.g. 
 
 
 
-## Reflection (Optional)
+# Reflection (Optional)
 
 To do: add something about how to have to choose a model to submit so that it runs in docker, but we do include our code for the whole pipeline. 
 

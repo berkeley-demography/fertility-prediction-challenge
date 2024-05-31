@@ -30,7 +30,7 @@ We also employ powerful models capable of handling increased data volumes (e.g. 
 
 ## Reflection (Optional)
 
-TODO: add something about how to have to choose a model to submit so that it runs in docker, but we do include our code for the whole pipeline. 
+To do: add something about how to have to choose a model to submit so that it runs in docker, but we do include our code for the whole pipeline. 
 
 
 

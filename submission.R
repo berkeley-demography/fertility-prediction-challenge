@@ -29,7 +29,7 @@ clean_df <- function(df, background_df = NULL){
 }
 
 
-predict_outcomes <- function(df, background_df = NULL, model_path = "./best_final_fit.rds"){
+predict_outcomes <- function(df, background_df = NULL, model_path = "./best_final_fit_all_train.rds"){
   # Generate predictions using the saved model and the input dataframe.
   
   # The predict_outcomes function accepts a dataframe as an argument

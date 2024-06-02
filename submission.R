@@ -19,6 +19,8 @@ library(tidyverse)
 library(tidymodels)
 library(bundle)
 
+source('step_take_most_recent.R')
+
 print("Starting script...")
 
 clean_df <- function(df, background_df = NULL){

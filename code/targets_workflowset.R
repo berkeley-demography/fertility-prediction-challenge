@@ -4,9 +4,9 @@ get_grid_results <- function(aw, folds, grid=10, cores=8, seed=1503) {
   
   grid_ctrl <- control_grid(
     verbose=TRUE,
-    #save_pred = TRUE,
-    parallel_over = "everything"
-    #save_workflow = TRUE
+    save_pred = TRUE,
+    parallel_over = "everything",
+    save_workflow = TRUE
   )
   
   registerDoMC(cores = cores)
@@ -52,3 +52,34 @@ get_race_results <- function(aw, folds, grid=10, cores=8, seed=1503) {
   
   return(res)
 }
+
+
+# I think we might eventually want to increase the grid value
+# to improve accuracy
+get_bayes_results <- function(aw, folds, cores=8, seed=1503) {
+  
+  bayes_ctrl <- control_bayes(
+    verbose=TRUE,
+    parallel_over = "everything",
+    #param_info = rf_param,
+    # these two are needed if we want to stack
+    save_pred = TRUE,
+    save_workflow = TRUE
+  )
+  
+  registerDoMC(cores = cores)
+  
+  res <- aw %>%
+    workflow_map(
+      fn = 'tune_bayes',
+      seed = seed,
+      resamples = folds,
+      #grid = grid,
+      metrics = metric_set(f_meas, accuracy, recall, precision, roc_auc),
+      control = bayes_ctrl)
+  
+  registerDoSEQ()
+  
+  return(res)
+}
+
